@@ -1,10 +1,20 @@
-"""Discover, probe, and pin the selected HCC100's certificate."""
+"""Guided HCC100 pairing that mirrors the technician app.
 
+The controller stays invisible until its physical Bluetooth button is pressed.
+The flow therefore walks the user through it: a first press makes the device
+advertise so it can be discovered, then a second press opens the connection
+window where the autonomous P-256 handshake runs.
+"""
+
+import asyncio
 from typing import Any
 
 import probatio as vol
 from bleak.exc import BleakError
-from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
+from homeassistant.components.bluetooth import (
+    BluetoothServiceInfoBleak,
+    async_discovered_service_info,
+)
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import callback
@@ -20,50 +30,143 @@ from .const import (
 )
 from .coordinator import create_client
 
+# How long to keep scanning for the controller after the first button press,
+# and how often to re-check Home Assistant's discovered devices.
+DISCOVERY_TIMEOUT = 20.0
+DISCOVERY_INTERVAL = 1.0
+
+# The connection window can close quickly; retry the handshake a few times
+# within the second-press window before giving up.
+HANDSHAKE_ATTEMPTS = 3
+HANDSHAKE_RETRY_DELAY = 2.0
+
+
+def _is_hcc100(name: str | None) -> bool:
+    return bool(name) and name.upper().startswith("HCC100")
+
 
 class Hcc100ConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
     def __init__(self) -> None:
         self._address: str | None = None
+        self._name: str | None = None
+        self._discovered: dict[str, str | None] = {}
 
     async def async_step_bluetooth(
         self, discovery_info: BluetoothServiceInfoBleak
     ) -> ConfigFlowResult:
-        self._address = discovery_info.address
-        self.context["title_placeholders"] = {"name": discovery_info.name}
-        return await self.async_step_user()
+        """Home Assistant saw the controller advertise after the first press."""
+        address = discovery_info.address.upper()
+        await self.async_set_unique_id(address)
+        self._abort_if_unique_id_configured()
+        self._address = address
+        self._name = discovery_info.name
+        self.context["title_placeholders"] = {"name": discovery_info.name or "HCC100"}
+        return await self.async_step_confirm()
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
-        errors = {}
+        """First press: prompt the button, then discover the controller."""
+        errors: dict[str, str] = {}
         if user_input is not None:
-            address = user_input[CONF_ADDRESS].strip().upper()
-            client = None
+            known = set(self._async_current_ids())
+            self._discovered = {
+                address: name
+                for address, name in (await self._async_discover()).items()
+                if address not in known
+            }
+            if not self._discovered:
+                errors["base"] = "not_found"
+            elif len(self._discovered) == 1:
+                self._address, self._name = next(iter(self._discovered.items()))
+                return await self.async_step_confirm()
+            else:
+                return await self.async_step_pick()
+        return self.async_show_form(step_id="user", data_schema=vol.Schema({}), errors=errors)
+
+    async def async_step_pick(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Several HCC100 were found: let the user choose one."""
+        if user_input is not None:
+            self._address = user_input[CONF_ADDRESS]
+            self._name = self._discovered.get(self._address)
+            return await self.async_step_confirm()
+        options = {
+            address: f"{name or 'HCC100'} ({address})" for address, name in self._discovered.items()
+        }
+        return self.async_show_form(
+            step_id="pick",
+            data_schema=vol.Schema({vol.Required(CONF_ADDRESS): vol.In(options)}),
+        )
+
+    async def async_step_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Second press: open the connection window and run the handshake."""
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            await self.async_set_unique_id(self._address, raise_on_progress=False)
+            self._abort_if_unique_id_configured()
             try:
-                client = await create_client(self.hass, address)
-                info = await client.open()
-                await self.async_set_unique_id(info.serial)
-                self._abort_if_unique_id_configured(updates={CONF_ADDRESS: address})
-                return self.async_create_entry(
-                    title=f"HCC100 {info.serial[-6:]}",
-                    data={
-                        CONF_ADDRESS: address,
-                        CONF_SERIAL: info.serial,
-                        CONF_FINGERPRINT: info.certificate_fingerprint,
-                    },
-                )
+                info = await self._async_handshake()
             except AuthenticationError:
                 errors["base"] = "authentication_failed"
             except (Hcc100Error, BleakError, UpdateFailed, OSError, TimeoutError, ValueError):
                 errors["base"] = "cannot_connect"
+            else:
+                return self.async_create_entry(
+                    title=f"HCC100 {info.serial[-6:]}",
+                    data={
+                        CONF_ADDRESS: self._address,
+                        CONF_SERIAL: info.serial,
+                        CONF_FINGERPRINT: info.certificate_fingerprint,
+                    },
+                )
+        return self.async_show_form(
+            step_id="confirm",
+            data_schema=vol.Schema({}),
+            errors=errors,
+            description_placeholders={"name": self._name or self._address or "HCC100"},
+        )
+
+    async def _async_discover(self) -> dict[str, str | None]:
+        """Poll Home Assistant's discovered devices for an advertising HCC100."""
+        deadline = self.hass.loop.time() + DISCOVERY_TIMEOUT
+        while True:
+            found = {
+                info.address.upper(): info.name
+                for info in async_discovered_service_info(self.hass, connectable=True)
+                if _is_hcc100(info.name)
+            }
+            if found or self.hass.loop.time() >= deadline:
+                return found
+            await asyncio.sleep(DISCOVERY_INTERVAL)
+
+    async def _async_handshake(self) -> Any:
+        """Connect and run the handshake, retrying inside the press window."""
+        assert self._address is not None
+        last_exc: Exception | None = None
+        for attempt in range(HANDSHAKE_ATTEMPTS):
+            client = None
+            try:
+                client = await create_client(self.hass, self._address)
+                return await client.open()
+            except AuthenticationError:
+                raise
+            except (
+                Hcc100Error,
+                BleakError,
+                UpdateFailed,
+                OSError,
+                TimeoutError,
+                ValueError,
+            ) as exc:
+                last_exc = exc
+                if attempt + 1 < HANDSHAKE_ATTEMPTS:
+                    await asyncio.sleep(HANDSHAKE_RETRY_DELAY)
             finally:
                 if client:
                     await client.close()
-        return self.async_show_form(
-            step_id="user",
-            data_schema=vol.Schema({vol.Required(CONF_ADDRESS, default=self._address or ""): str}),
-            errors=errors,
-        )
+        raise last_exc  # type: ignore[misc]
 
     @staticmethod
     @callback

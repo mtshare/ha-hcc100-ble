@@ -3,15 +3,24 @@
   "config": {
     "step": {
       "user": {
-        "title": "Connect your HCC100",
-        "description": "Briefly enable Bluetooth on the controller and disconnect Resideo Technician. Enter its Bluetooth address. The selected device certificate will be remembered for future connections.",
+        "title": "Pair your HCC100",
+        "description": "Disconnect the Resideo Technician app from the controller. Briefly press the controller's Bluetooth button once, then select Submit to search for it."
+      },
+      "pick": {
+        "title": "Select your HCC100",
+        "description": "More than one controller was found. Choose the one to pair.",
         "data": {
-          "address": "Bluetooth address"
+          "address": "Controller"
         }
+      },
+      "confirm": {
+        "title": "Complete the handshake",
+        "description": "Press the Bluetooth button on {name} again to open the connection window, then select Submit. The device certificate will be remembered for future connections."
       }
     },
     "error": {
-      "cannot_connect": "Cannot connect. Keep the controller in range, enable its Bluetooth window, and disconnect the technician app.",
+      "not_found": "No HCC100 found. Press the controller's Bluetooth button again, keep it in range, and make sure the technician app is disconnected.",
+      "cannot_connect": "Cannot connect. Press the button again to reopen the Bluetooth window, keep the controller in range, and disconnect the technician app.",
       "authentication_failed": "The device identity or handshake could not be verified."
     },
     "abort": {

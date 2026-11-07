@@ -3,16 +3,25 @@
   "config": {
     "step": {
       "user": {
-        "title": "Collega il tuo HCC100",
-        "description": "Attiva brevemente il Bluetooth sul controller e disconnetti Resideo Technician. Inserisci il suo indirizzo Bluetooth. Il certificato del dispositivo scelto verrà ricordato per le connessioni successive.",
+        "title": "Associa il tuo HCC100",
+        "description": "Disconnetti l'app Resideo Technician dal controller. Premi una volta brevemente il tasto Bluetooth del controller, poi seleziona Invia per cercarlo."
+      },
+      "pick": {
+        "title": "Seleziona il tuo HCC100",
+        "description": "È stato trovato più di un controller. Scegli quello da associare.",
         "data": {
-          "address": "Indirizzo Bluetooth"
+          "address": "Controller"
         }
+      },
+      "confirm": {
+        "title": "Completa la connessione",
+        "description": "Premi di nuovo il tasto Bluetooth su {name} per aprire la finestra di connessione, poi seleziona Invia. Il certificato del dispositivo verrà ricordato per le connessioni successive."
       }
     },
     "error": {
-      "cannot_connect": "Connessione non riuscita. Controlla la portata, attiva il Bluetooth sul controller e disconnetti l’app tecnica.",
-      "authentication_failed": "Non è stato possibile verificare l’identità del dispositivo o completare la connessione."
+      "not_found": "Nessun HCC100 trovato. Premi di nuovo il tasto Bluetooth del controller, tienilo a portata e assicurati che l'app tecnica sia disconnessa.",
+      "cannot_connect": "Connessione non riuscita. Premi di nuovo il tasto per riaprire la finestra Bluetooth, tieni il controller a portata e disconnetti l'app tecnica.",
+      "authentication_failed": "Non è stato possibile verificare l'identità del dispositivo o completare la connessione."
     },
     "abort": {
       "already_configured": "Questo HCC100 è già configurato."

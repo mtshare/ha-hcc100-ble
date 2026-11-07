@@ -44,17 +44,31 @@ la connessione al controller.
 Fonti: [Bluetooth in Home Assistant](https://www.home-assistant.io/integrations/bluetooth/),
 [API per le integrazioni BLE](https://contributors.home-assistant.io/core/integrations/bluetooth/).
 
-## Installazione in Home Assistant OS
+## Installazione tramite HACS
+
+Questa repository è strutturata come **integrazione HACS**. Essendo privata non è
+nello store predefinito: va aggiunta come *repository personalizzata*.
+
+1. In Home Assistant aprire **HACS**.
+2. Menù in alto a destra → **Custom repositories**.
+3. Repository: `https://github.com/mtshare/ha-hcc100-ble` — Categoria: **Integration** → **Add**.
+4. Cercare **HCC100 Local** nell'elenco HACS, aprirlo e premere **Download**.
+5. **Riavviare Home Assistant**.
+6. **Impostazioni → Dispositivi e servizi → Aggiungi integrazione → HCC100 Local**
+   e seguire il config flow (impronta del certificato e indirizzo BLE).
+
+Per una repository privata HACS richiede un token GitHub con accesso alla repo
+(normalmente già configurato in HACS). HACS usa l'ultima **release** taggata.
+
+## Installazione manuale (Home Assistant OS)
 
 Target iniziale: **Home Assistant 2026.11.0**, Raspberry Pi 4, 64 bit.
 
-Seguire [l'installazione su HA OS](docs/INSTALLAZIONE_HA_OS.md). La cartella da
-installare è `custom_components/hcc100_local`; le dipendenze Bluetooth e
-crittografiche vengono fornite dal Core e dall'integrazione Bluetooth di HA.
-Non installare pacchetti di sistema sul Raspberry per questo componente.
-
-`hacs.json` prepara la struttura per HACS, ma per questa repository privata il
-percorso documentato e verificabile è l'installazione manuale del pacchetto.
+In alternativa a HACS, seguire [l'installazione su HA OS](docs/INSTALLAZIONE_HA_OS.md).
+La cartella da copiare in `/config/custom_components/` è
+`custom_components/hcc100_local`; le dipendenze Bluetooth e crittografiche vengono
+fornite dal Core e dall'integrazione Bluetooth di HA. Non installare pacchetti di
+sistema sul Raspberry per questo componente.
 
 ## Client da terminale
 

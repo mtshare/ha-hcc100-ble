@@ -1,4 +1,5 @@
 {
   "name": "HCC100 Local",
-  "homeassistant": "2026.11.0"
+  "homeassistant": "2026.11.0",
+  "render_readme": true
 }

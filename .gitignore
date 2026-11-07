@@ -17,3 +17,24 @@ runtime/
 Runner.app/
 private/
 ha_access_token*
+
+# --- Materiale di ricerca / mai pubblicare (dati sensibili e proprietari) ---
+*.bin
+*.der
+*.pem
+*.p12
+*.pfx
+*.jsonl
+*.pcap
+*.pcapng
+*.framework/
+*.app/
+*secret*
+session_keys*
+handshake/
+archives/
+decrypted/
+inventory/
+rea_evidence/
+captures/
+firmware*

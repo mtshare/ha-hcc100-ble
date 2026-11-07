@@ -42,7 +42,7 @@ HANDSHAKE_ATTEMPTS = 3
 HANDSHAKE_RETRY_DELAY = 2.0
 
 # The HCC100 GATT service. The advertised name is user-editable (e.g.
-# "HCC100 Marco"), so also match on this service to find a renamed controller.
+# "HCC100 Hallway"), so also match on this service to find a renamed controller.
 SERVICE_UUID = "0000f300-0000-1000-8000-00805f9b34fb"
 
 

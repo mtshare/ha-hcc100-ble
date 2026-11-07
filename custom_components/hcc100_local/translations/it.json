@@ -53,6 +53,30 @@
       },
       "demand": {
         "name": "Richiesta zona"
+      },
+      "heat_demand": {
+        "name": "Richiesta riscaldamento sistema"
+      },
+      "cool_demand": {
+        "name": "Richiesta raffreddamento sistema"
+      },
+      "supply_setpoint": {
+        "name": "Setpoint acqua di mandata"
+      },
+      "max_supply_temp": {
+        "name": "Temperatura massima mandata"
+      },
+      "supply_temp": {
+        "name": "Temperatura di mandata"
+      },
+      "outdoor_temp": {
+        "name": "Temperatura esterna"
+      },
+      "pump": {
+        "name": "Stato pompa"
+      },
+      "mode": {
+        "name": "Modalità caldo/freddo"
       }
     },
     "binary_sensor": {

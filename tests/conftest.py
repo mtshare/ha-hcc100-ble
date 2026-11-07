@@ -34,6 +34,16 @@ class FakeTransport:
         self.commands = []
         self.client_points = []
         self.drop_response = False
+        self.system_values = {
+            235: 1,  # pump
+            248: 2,  # heat/cool mode (heating)
+            236: 10,  # heat demand %
+            237: 0,  # cool demand %
+            245: 40.0,  # supply temp °C
+            247: 12.0,  # outdoor temp °C
+            244: 35.0,  # supply setpoint °C
+            215: 45.0,  # max supply temp °C
+        }
 
     def set_disconnected_callback(self, callback):
         self._disconnected = callback
@@ -93,6 +103,14 @@ class FakeTransport:
                         "ZoneID": list(range(1, 9)),
                         "ZoneName": [f"Test zone {i}" for i in range(1, 9)],
                     }
+                ]
+            elif command.get("ZoneID") is None:
+                # Controller-wide read: no ZoneID in request or response.
+                system = self.system_values
+                response = [
+                    {"Cmd": "Resp", "ID": i, "Val": system[i]}
+                    for i in command["IDs"]
+                    if i in system
                 ]
             else:
                 zone = command.get("ZoneID")

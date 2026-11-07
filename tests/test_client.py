@@ -127,3 +127,51 @@ async def test_invalid_zone_demand_is_unknown_without_losing_other_state(peer, v
     assert state.zones[1].temperature == 20.5
     assert state.zones[1].outputs_open is True
     await client.close()
+
+
+async def test_system_state_parsed_without_zone_id(peer):
+    client = Hcc100Client(peer)
+    state = await client.read_state()
+    system = state.system
+    assert system is not None
+    assert system.heat_demand == 10 and system.cool_demand == 0
+    assert system.supply_setpoint == 35.0 and system.max_supply_temp == 45.0
+    assert system.supply_temp == 40.0 and system.outdoor_temp == 12.0
+    assert system.pump == 1 and system.mode == 2
+    # Controller-wide reads must not carry a ZoneID.
+    system_reads = [c for c in peer.commands if c["Cmd"] == "GetList" and "ZoneID" not in c]
+    assert system_reads
+    await client.close()
+
+
+async def test_system_temperature_sentinel_is_unknown(peer):
+    peer.system_values[245] = 327.67
+    peer.system_values[247] = 327.67
+    client = Hcc100Client(peer)
+    state = await client.read_state()
+    assert state.system.supply_temp is None
+    assert state.system.outdoor_temp is None
+    # Other system values stay valid.
+    assert state.system.heat_demand == 10
+    await client.close()
+
+
+@pytest.mark.parametrize("pump", [3, -1, True, "1", None, 1.0])
+async def test_invalid_pump_code_is_unknown(peer, pump):
+    peer.system_values[235] = pump
+    client = Hcc100Client(peer)
+    state = await client.read_state()
+    assert state.system.pump is None
+    assert state.system.mode == 2
+    await client.close()
+
+
+async def test_missing_system_group_keeps_zone_state(peer):
+    peer.system_values = {}
+    client = Hcc100Client(peer)
+    state = await client.read_state()
+    assert state.system is None
+    assert state.zones[1].temperature == 20.5
+    assert state.zones[1].outputs_open is True
+    assert client.ready
+    await client.close()

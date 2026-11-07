@@ -42,7 +42,28 @@ class ZoneState:
 
 
 @dataclass(frozen=True)
+class SystemState:
+    """Controller-wide status read without a ZoneID.
+
+    Reconstructed from the app's general status and sensor read groups.
+    Pump (235) and mode (248) are kept as raw codes: the 1/2 mode mapping and
+    the pump's special value 2 are not yet corroborated, so no label or on/off
+    meaning is implied here.
+    """
+
+    heat_demand: float | None = None  # 236, %
+    cool_demand: float | None = None  # 237, %
+    supply_setpoint: float | None = None  # 244, °C
+    max_supply_temp: float | None = None  # 215, °C
+    supply_temp: float | None = None  # 245, °C (327.67 = unavailable)
+    outdoor_temp: float | None = None  # 247, °C (327.67 = unavailable)
+    pump: int | None = None  # 235, raw code 0/1/2
+    mode: int | None = None  # 248, raw code 1/2
+
+
+@dataclass(frozen=True)
 class ControllerState:
     device: DeviceInfo
     zones: dict[int, ZoneState]
+    system: SystemState | None = None
     updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))

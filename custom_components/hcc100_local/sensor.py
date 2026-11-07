@@ -37,25 +37,88 @@ DESCRIPTIONS = (
     SensorEntityDescription(key="open_count", translation_key="open_count", icon="mdi:valve"),
 )
 
+# Controller-wide sensors read without a ZoneID. Pump and mode stay raw codes
+# (no unit, no inferred label) until their enumerations are corroborated.
+SYSTEM_DESCRIPTIONS = (
+    SensorEntityDescription(
+        key="heat_demand",
+        translation_key="heat_demand",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:fire",
+    ),
+    SensorEntityDescription(
+        key="cool_demand",
+        translation_key="cool_demand",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:snowflake",
+    ),
+    SensorEntityDescription(
+        key="supply_setpoint",
+        translation_key="supply_setpoint",
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        device_class=SensorDeviceClass.TEMPERATURE,
+    ),
+    SensorEntityDescription(
+        key="max_supply_temp",
+        translation_key="max_supply_temp",
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    SensorEntityDescription(
+        key="supply_temp",
+        translation_key="supply_temp",
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    SensorEntityDescription(
+        key="outdoor_temp",
+        translation_key="outdoor_temp",
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    SensorEntityDescription(
+        key="pump",
+        translation_key="pump",
+        icon="mdi:pump",
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    SensorEntityDescription(
+        key="mode",
+        translation_key="mode",
+        icon="mdi:sun-snowflake",
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+)
+
 
 async def async_setup_entry(
     hass, entry: Hcc100ConfigEntry, async_add_entities: AddEntitiesCallback
 ):
     coordinator = entry.runtime_data
     seen = set()
+    system_added = False
 
     @callback
-    def add_zones():
+    def add_entities():
+        nonlocal system_added
         additions = []
         for zone_id in coordinator.data.zones.keys() - seen:
             additions.extend(Hcc100ZoneSensor(coordinator, zone_id, d) for d in DESCRIPTIONS)
             seen.add(zone_id)
+        if not system_added and coordinator.data.system is not None:
+            additions.extend(Hcc100SystemSensor(coordinator, d) for d in SYSTEM_DESCRIPTIONS)
+            system_added = True
         if additions:
             async_add_entities(additions)
 
     async_add_entities([Hcc100FirmwareSensor(coordinator)])
-    add_zones()
-    entry.async_on_unload(coordinator.async_add_listener(add_zones))
+    add_entities()
+    entry.async_on_unload(coordinator.async_add_listener(add_entities))
 
 
 class Hcc100ZoneSensor(Hcc100Entity, SensorEntity):
@@ -67,6 +130,22 @@ class Hcc100ZoneSensor(Hcc100Entity, SensorEntity):
     @property
     def native_value(self):
         return getattr(self.zone, self.entity_description.key, None)
+
+
+class Hcc100SystemSensor(Hcc100Entity, SensorEntity):
+    def __init__(self, coordinator, description):
+        super().__init__(coordinator)
+        self.entity_description = description
+        self._attr_unique_id = f"{self.serial}_system_{description.key}"
+
+    @property
+    def native_value(self):
+        system = self.coordinator.data.system
+        return getattr(system, self.entity_description.key, None) if system else None
+
+    @property
+    def available(self) -> bool:
+        return super().available and self.coordinator.data.system is not None
 
 
 class Hcc100FirmwareSensor(Hcc100Entity, SensorEntity):

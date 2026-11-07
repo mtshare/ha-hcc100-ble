@@ -7,11 +7,15 @@ from typing import Any
 from .crypto import CLIENT_HELLO, DeviceHello, SessionCipher, create_client_hello
 from .errors import AuthenticationError, ConnectionLost, Hcc100Error, ProtocolError
 from .framing import ENCRYPTED, HANDSHAKE, FrameReader, FrameWriter, Message
-from .models import ControllerState, DeviceInfo, ZoneState
+from .models import ControllerState, DeviceInfo, SystemState, ZoneState
 from .transport import Transport
 
 SESSION = "WickAppDIY"
 _ALLOWED_COMMANDS = frozenset({"GetDeviceInfo", "GetName", "GetList"})
+
+# Supply/outdoor sensors report this value when a reading is unavailable; the
+# app shows "--" for it. Treat it as unknown instead of a temperature.
+_TEMP_UNAVAILABLE = 327.67
 
 
 def _temperature(value: Any) -> float | None:
@@ -23,6 +27,21 @@ def _temperature(value: Any) -> float | None:
 def _percentage(value: Any) -> float | None:
     if isinstance(value, (int, float)) and not isinstance(value, bool) and 0 <= value <= 100:
         return float(value)
+    return None
+
+
+def _flow_temperature(value: Any) -> float | None:
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        if abs(value - _TEMP_UNAVAILABLE) < 0.01:
+            return None
+        if -40 <= value <= 150:
+            return float(value)
+    return None
+
+
+def _code(value: Any, allowed: frozenset[int]) -> int | None:
+    if isinstance(value, int) and not isinstance(value, bool) and value in allowed:
+        return value
     return None
 
 
@@ -264,4 +283,32 @@ class Hcc100Client:
                 _temperature(temperatures[231]),
                 demand=_percentage(opened[229]),
             )
-        return ControllerState(self.device_info, zones)
+        system = await self._read_system()
+        return ControllerState(self.device_info, zones, system)
+
+    async def _read_system(self) -> SystemState | None:
+        """Read controller-wide status without a ZoneID.
+
+        Mirrors the app's status (235/248/236/237), sensor (245/247) and
+        supply (244/215) groups. Each group is best-effort: a controller that
+        omits a group leaves those fields unknown without failing the whole
+        read, so the existing per-zone polling is never blocked by it.
+        """
+        values: dict[int, Any] = {}
+        for ids in ([235, 248, 236, 237], [245, 247], [244, 215]):
+            try:
+                values.update(await self.get_parameters(ids))
+            except Hcc100Error:
+                continue
+        if not values:
+            return None
+        return SystemState(
+            heat_demand=_percentage(values.get(236)),
+            cool_demand=_percentage(values.get(237)),
+            supply_setpoint=_flow_temperature(values.get(244)),
+            max_supply_temp=_flow_temperature(values.get(215)),
+            supply_temp=_flow_temperature(values.get(245)),
+            outdoor_temp=_flow_temperature(values.get(247)),
+            pump=_code(values.get(235), frozenset({0, 1, 2})),
+            mode=_code(values.get(248), frozenset({1, 2})),
+        )

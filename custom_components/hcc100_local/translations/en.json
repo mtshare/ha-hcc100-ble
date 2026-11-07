@@ -53,6 +53,30 @@
       },
       "demand": {
         "name": "Zone demand"
+      },
+      "heat_demand": {
+        "name": "System heat demand"
+      },
+      "cool_demand": {
+        "name": "System cool demand"
+      },
+      "supply_setpoint": {
+        "name": "Supply water setpoint"
+      },
+      "max_supply_temp": {
+        "name": "Max supply temperature"
+      },
+      "supply_temp": {
+        "name": "Supply temperature"
+      },
+      "outdoor_temp": {
+        "name": "Outdoor temperature"
+      },
+      "pump": {
+        "name": "Pump status"
+      },
+      "mode": {
+        "name": "Heat/cool mode"
       }
     },
     "binary_sensor": {

@@ -4,7 +4,7 @@ import zipfile
 from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
-output = root / "dist/hcc100-local-0.1.1.zip"
+output = root / "dist/hcc100-local-0.1.2.zip"
 output.parent.mkdir(exist_ok=True)
 with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as archive:
     for path in sorted((root / "custom_components/hcc100_local").rglob("*")):

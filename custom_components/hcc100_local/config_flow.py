@@ -31,8 +31,9 @@ from .const import (
 from .coordinator import create_client
 
 # How long to keep scanning for the controller after the first button press,
-# and how often to re-check Home Assistant's discovered devices.
-DISCOVERY_TIMEOUT = 20.0
+# and how often to re-check Home Assistant's discovered devices. The pairing
+# window lasts about a minute, so stay well inside it.
+DISCOVERY_TIMEOUT = 40.0
 DISCOVERY_INTERVAL = 1.0
 
 # The connection window can close quickly; retry the handshake a few times
@@ -40,9 +41,16 @@ DISCOVERY_INTERVAL = 1.0
 HANDSHAKE_ATTEMPTS = 3
 HANDSHAKE_RETRY_DELAY = 2.0
 
+# The HCC100 GATT service. The advertised name is user-editable (e.g.
+# "HCC100 Marco"), so also match on this service to find a renamed controller.
+SERVICE_UUID = "0000f300-0000-1000-8000-00805f9b34fb"
 
-def _is_hcc100(name: str | None) -> bool:
-    return bool(name) and name.upper().startswith("HCC100")
+
+def _is_hcc100(info: BluetoothServiceInfoBleak) -> bool:
+    name = info.name or ""
+    if name.upper().startswith("HCC100"):
+        return True
+    return SERVICE_UUID in (info.service_uuids or [])
 
 
 class Hcc100ConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -66,14 +74,24 @@ class Hcc100ConfigFlow(ConfigFlow, domain=DOMAIN):
         return await self.async_step_confirm()
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
-        """First press: prompt the button, then discover the controller."""
+        """First press: discover the controller, or accept a typed address.
+
+        Leaving the address empty searches automatically after the button
+        press. Typing the Bluetooth address skips discovery and goes straight
+        to the handshake, which is the reliable path when the controller does
+        not surface in the scan.
+        """
         errors: dict[str, str] = {}
         if user_input is not None:
+            address = (user_input.get(CONF_ADDRESS) or "").strip().upper()
+            if address:
+                self._address, self._name = address, None
+                return await self.async_step_confirm()
             known = set(self._async_current_ids())
             self._discovered = {
-                address: name
-                for address, name in (await self._async_discover()).items()
-                if address not in known
+                found: name
+                for found, name in (await self._async_discover()).items()
+                if found not in known
             }
             if not self._discovered:
                 errors["base"] = "not_found"
@@ -82,7 +100,11 @@ class Hcc100ConfigFlow(ConfigFlow, domain=DOMAIN):
                 return await self.async_step_confirm()
             else:
                 return await self.async_step_pick()
-        return self.async_show_form(step_id="user", data_schema=vol.Schema({}), errors=errors)
+        return self.async_show_form(
+            step_id="user",
+            data_schema=vol.Schema({vol.Optional(CONF_ADDRESS): str}),
+            errors=errors,
+        )
 
     async def async_step_pick(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Several HCC100 were found: let the user choose one."""
@@ -135,7 +157,7 @@ class Hcc100ConfigFlow(ConfigFlow, domain=DOMAIN):
             found = {
                 info.address.upper(): info.name
                 for info in async_discovered_service_info(self.hass, connectable=True)
-                if _is_hcc100(info.name)
+                if _is_hcc100(info)
             }
             if found or self.hass.loop.time() >= deadline:
                 return found

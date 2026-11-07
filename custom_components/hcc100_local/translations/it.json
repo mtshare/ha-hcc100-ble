@@ -4,7 +4,10 @@
     "step": {
       "user": {
         "title": "Associa il tuo HCC100",
-        "description": "Disconnetti l'app Resideo Technician dal controller. Premi una volta brevemente il tasto Bluetooth del controller, poi seleziona Invia per cercarlo."
+        "description": "Disconnetti l'app Resideo Technician dal controller. Premi una volta brevemente il tasto Bluetooth del controller, poi seleziona Invia per cercarlo. Se non viene trovato, inserisci qui sotto il suo indirizzo Bluetooth e invia di nuovo.",
+        "data": {
+          "address": "Indirizzo Bluetooth (facoltativo)"
+        }
       },
       "pick": {
         "title": "Seleziona il tuo HCC100",

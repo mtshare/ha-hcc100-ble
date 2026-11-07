@@ -4,7 +4,10 @@
     "step": {
       "user": {
         "title": "Pair your HCC100",
-        "description": "Disconnect the Resideo Technician app from the controller. Briefly press the controller's Bluetooth button once, then select Submit to search for it."
+        "description": "Disconnect the Resideo Technician app from the controller. Briefly press the controller's Bluetooth button once, then select Submit to search for it. If it is not found, enter its Bluetooth address below and submit again.",
+        "data": {
+          "address": "Bluetooth address (optional)"
+        }
       },
       "pick": {
         "title": "Select your HCC100",

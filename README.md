@@ -46,8 +46,8 @@ Fonti: [Bluetooth in Home Assistant](https://www.home-assistant.io/integrations/
 
 ## Installazione tramite HACS
 
-Questa repository è strutturata come **integrazione HACS**. Essendo privata non è
-nello store predefinito: va aggiunta come *repository personalizzata*.
+Questa repository è strutturata come **integrazione HACS**. Non è (ancora) nello
+store predefinito di HACS, quindi va aggiunta come *repository personalizzata*.
 
 1. In Home Assistant aprire **HACS**.
 2. Menù in alto a destra → **Custom repositories**.
@@ -57,8 +57,7 @@ nello store predefinito: va aggiunta come *repository personalizzata*.
 6. **Impostazioni → Dispositivi e servizi → Aggiungi integrazione → HCC100 Local**
    e seguire il config flow (impronta del certificato e indirizzo BLE).
 
-Per una repository privata HACS richiede un token GitHub con accesso alla repo
-(normalmente già configurato in HACS). HACS usa l'ultima **release** taggata.
+HACS usa l'ultima **release** taggata (`v0.1.0`).
 
 ## Installazione manuale (Home Assistant OS)
 

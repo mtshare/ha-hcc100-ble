@@ -1,0 +1,52 @@
+{
+  "title": "HCC100 Local",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect your HCC100",
+        "description": "Briefly enable Bluetooth on the controller and disconnect Resideo Technician. Enter its Bluetooth address. The selected device certificate will be remembered for future connections.",
+        "data": {
+          "address": "Bluetooth address"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect. Keep the controller in range, enable its Bluetooth window, and disconnect the technician app.",
+      "authentication_failed": "The device identity or handshake could not be verified."
+    },
+    "abort": {
+      "already_configured": "This HCC100 is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Polling",
+        "data": {
+          "poll_interval": "Update interval (seconds)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "temperature": {
+        "name": "Temperature"
+      },
+      "setpoint": {
+        "name": "Setpoint"
+      },
+      "open_count": {
+        "name": "Open outputs"
+      },
+      "firmware": {
+        "name": "Firmware"
+      }
+    },
+    "binary_sensor": {
+      "outputs_open": {
+        "name": "Outputs open"
+      }
+    }
+  }
+}

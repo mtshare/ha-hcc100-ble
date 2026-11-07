@@ -1,0 +1,52 @@
+{
+  "title": "HCC100 Local",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Collega il tuo HCC100",
+        "description": "Attiva brevemente il Bluetooth sul controller e disconnetti Resideo Technician. Inserisci il suo indirizzo Bluetooth. Il certificato del dispositivo scelto verrà ricordato per le connessioni successive.",
+        "data": {
+          "address": "Indirizzo Bluetooth"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Connessione non riuscita. Controlla la portata, attiva il Bluetooth sul controller e disconnetti l’app tecnica.",
+      "authentication_failed": "Non è stato possibile verificare l’identità del dispositivo o completare la connessione."
+    },
+    "abort": {
+      "already_configured": "Questo HCC100 è già configurato."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Aggiornamento",
+        "data": {
+          "poll_interval": "Intervallo di aggiornamento (secondi)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "temperature": {
+        "name": "Temperatura"
+      },
+      "setpoint": {
+        "name": "Setpoint"
+      },
+      "open_count": {
+        "name": "Numero uscite aperte"
+      },
+      "firmware": {
+        "name": "Firmware"
+      }
+    },
+    "binary_sensor": {
+      "outputs_open": {
+        "name": "Uscite aperte"
+      }
+    }
+  }
+}

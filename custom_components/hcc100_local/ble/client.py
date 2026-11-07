@@ -20,6 +20,12 @@ def _temperature(value: Any) -> float | None:
     return None
 
 
+def _percentage(value: Any) -> float | None:
+    if isinstance(value, (int, float)) and not isinstance(value, bool) and 0 <= value <= 100:
+        return float(value)
+    return None
+
+
 def _mask(value: Any) -> int | None:
     if isinstance(value, int) and not isinstance(value, bool) and 0 <= value < 1 << 20:
         return value
@@ -256,5 +262,6 @@ class Hcc100Client:
                 _mask(closed[241]),
                 _temperature(temperatures[230]),
                 _temperature(temperatures[231]),
+                demand=_percentage(opened[229]),
             )
         return ControllerState(self.device_info, zones)

@@ -50,6 +50,9 @@
       },
       "firmware": {
         "name": "Firmware"
+      },
+      "demand": {
+        "name": "Zone demand"
       }
     },
     "binary_sensor": {

@@ -6,7 +6,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import EntityCategory, UnitOfTemperature
+from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfTemperature
 from homeassistant.core import callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -26,6 +26,13 @@ DESCRIPTIONS = (
         translation_key="setpoint",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
+    ),
+    SensorEntityDescription(
+        key="demand",
+        translation_key="demand",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:gauge",
     ),
     SensorEntityDescription(key="open_count", translation_key="open_count", icon="mdi:valve"),
 )

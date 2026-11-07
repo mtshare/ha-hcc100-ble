@@ -16,6 +16,7 @@ async def test_independent_handshake_small_mtu_and_state(peer):
     assert list(state.zones) == [1]
     zone = state.zones[1]
     assert zone.temperature == 20.5 and zone.setpoint == 21
+    assert zone.demand == 5
     assert zone.open_mask == 1 and zone.closed_mask == 2
     assert zone.outputs_open and zone.open_count == 1 and zone.masks_consistent
     assert {c["Cmd"] for c in peer.commands} <= {"GetDeviceInfo", "GetList", "GetName"}
@@ -87,4 +88,42 @@ async def test_connector_retry_disconnect_does_not_poison_new_session(peer):
     # Once connected, a real disconnect must still invalidate the session.
     peer._disconnected()
     assert not client.ready
+    await client.close()
+
+
+@pytest.mark.parametrize("value", [0, 5, 10, 100, 42.5])
+async def test_zone_demand_preserves_controller_percentage(peer, value):
+    client = Hcc100Client(peer)
+    get_parameters = client.get_parameters
+
+    async def with_demand(ids, zone_id=None):
+        response = await get_parameters(ids, zone_id)
+        if 229 in response:
+            response[229] = value
+        return response
+
+    client.get_parameters = with_demand
+    state = await client.read_state()
+    assert state.zones[1].demand == value
+    await client.close()
+
+
+@pytest.mark.parametrize(
+    "value", [None, True, False, -1, 101, 2147483646, "100", float("nan"), float("inf")]
+)
+async def test_invalid_zone_demand_is_unknown_without_losing_other_state(peer, value):
+    client = Hcc100Client(peer)
+    get_parameters = client.get_parameters
+
+    async def with_demand(ids, zone_id=None):
+        response = await get_parameters(ids, zone_id)
+        if 229 in response:
+            response[229] = value
+        return response
+
+    client.get_parameters = with_demand
+    state = await client.read_state()
+    assert state.zones[1].demand is None
+    assert state.zones[1].temperature == 20.5
+    assert state.zones[1].outputs_open is True
     await client.close()

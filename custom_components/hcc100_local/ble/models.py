@@ -21,6 +21,7 @@ class ZoneState:
     closed_mask: int | None
     temperature: float | None
     setpoint: float | None
+    demand: float | None = None
 
     @property
     def masks_consistent(self) -> bool:

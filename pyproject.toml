@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hcc100-ble-local"
-version = "0.1.0"
+version = "0.1.1"
 description = "Experimental local Resideo HCC100 BLE reader and Home Assistant integration"
 requires-python = ">=3.13"
 dependencies = ["bleak>=1.1,<4", "cryptography>=44,<51"]
